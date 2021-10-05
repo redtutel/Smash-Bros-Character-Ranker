@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="initial-scale=1.0">
+<title>Picker</title>
+<style>
+body {
+    background:#FFF;
+    color:#000;
+    font-family:verdana, sans-serif;
+    font-size:10pt;
+    margin:0;
+    padding:10px;
+}
+
+a:link, a:visited {
+    color:#008;
+    font-weight:bold;
+    text-decoration:none;
+}
+
+a:active, a:hover {
+    color:#ACF;
+}
+
+.info {
+    font-weight:bold;
+}
+
+button {
+    font-family:inherit;
+    cursor:pointer;
+    border:0;
+    border-radius:3px;
+    padding:0.3em 0.5em;
+    background:#CCC;
+    color:#000;
+}
+
+button:hover {
+    background:#DDD;
+}
+
+button.disabled {
+    background:#DDD;
+    color:#888;
+    cursor:not-allowed;
+}
+
+button.disabled:hover {
+    background:#DDD;
+}
+
+#container {
+    position:relative;
+    margin-left:-10px;
+    margin-right:-10px;
+    padding:10px;
+    overflow:hidden;
+}
+
+@media (min-width:1024px) {
+    /* Put the found favorites beside the picking div when the window is sufficiently large */
+    #picking {
+        float:left;
+        width:636px;
+    }
+
+    #secondary {
+        margin-left:646px;
+    }
+}
+
+@media (min-width:1300px) {
+    /* Once we get to the point where 636px is less than half of the width of the screen, make the picking div just take up half */
+    #picking {
+        width:50%;
+    }
+
+    #secondary {
+        margin-left:51%;
+    }
+}
+
+#pick {
+    background:#58F;
+    color:#FFF;
+    font-size:larger;
+    font-weight:bold;
+    width:6em;
+    border-radius:5px;
+    margin-right:10px;
+}
+
+#pick.disabled {
+    background:#ACF;
+}
+
+#pick:hover {
+    background:#ACF;
+}
+
+.item-list {
+    padding:0;
+    list-style-type:none;
+    line-height:100px;
+}
+
+.item-list li {
+    margin:0;
+    display:inline-block;
+    height:100px;
+    width:100px;
+    line-height:100px;
+    border:3px solid transparent;
+    text-align:center;
+    position:relative;
+    vertical-align:top;
+    overflow:hidden;
+    border-radius:100%;
+    background:#F7F7F7;
+    color:#000;
+}
+
+.item-list li img {
+    vertical-align:middle;
+    max-height:100%;
+    max-width:100%;
+}
+
+.item-list li span {
+    display:inline-block;
+    vertical-align:middle;
+    line-height:1.2;
+}
+
+@media (max-width:636px) {
+    .item-list {
+        line-height:75px;
+    }
+
+    .item-list li {
+        line-height:75px;
+        height:75px;
+        width:75px;
+    }
+}
+
+@media (max-width:423px) {
+    .item-list {
+        line-height:50px;
+    }
+
+    .item-list li {
+        line-height:50px;
+        height:50px;
+        width:50px;
+    }
+}
+
+#evaluating li {
+    cursor:pointer;
+}
+
+#favorites li {
+    cursor:move;
+}
+
+.item-list li:hover {
+    background:#CDF;
+}
+
+.item-list.sorting li:hover {
+    background:#F7F7F7;
+}
+
+#evaluating li.selected {
+    border:3px solid #7AC;
+}
+
+#evaluating, #buttons {
+    text-align:center;
+    margin:auto;
+}
+
+#evaluating li.notice {
+    width:auto;
+    height:auto;
+    max-width:260px;
+    margin:auto;
+    background:#F7F7F7;
+    border-radius:10px;
+    padding:30px 30px;
+    color:#000;
+    text-align:center;
+    line-height:1.4;
+    cursor:auto;
+    font-size:10pt;
+}
+
+#buttons {
+    margin-top:30px;
+    position:relative;
+    z-index:3;
+}
+</style>
+</head>
+<body>
+<h1>Smash Character Picker</h1>
+
+<p>Pick Your Favorite Smash Character</p>
+
+<div id="container">
+
+<div id="picking">
+<ul id="evaluating" class="item-list">
+</ul>
+
+<p id="buttons"><button id="pick">Pick</button> <button id="pass">Pass</button> <button id="undo">Undo</button> <button id="redo">Redo </button><button class="reset">Reset</button></p>
+</div>
+
+<div id="secondary">
+<h2>Found favorites</h2>
+
+<ol id="favorites" class="item-list">
+</ol>
+</div>
+</div>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+<script src="picker.js"></script>
+<script src="picker-ui.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<script>
+'use strict';
+
+var items = [
+    // Define your items here
+    //{id: '', name: '', image: '.png'},
+    //Veterans
+    {id: 'Mario', name: 'Mario', image: '100px-Mario_SSBU.png'},
+    {id: 'Luigi', name: 'Luigi', image: '91px-Luigi_SSBU.png'},
+    {id: 'Peach', name: 'Peach', image: '89px-Peach_SSBU.png'},
+    {id: 'Bowser', name: 'Bowser', image: '100px-Bowser_SSBU.png'},
+    {id: 'Dr. Mario', name: 'Dr. Mario', image: '100px-Dr._Mario_SSBU.png'},
+    {id: 'Rosalina', name: 'Rosalina', image: '100px-Rosalina_&_Luma_SSBU.png'},
+	{id: 'Bowser Jr', name: 'Bowser Jr', image: '100px-Bowser_Jr._SSBU.png'},
+	{id: 'Yoshi', name: 'Yoshi', image: '100px-Yoshi_SSBU.png'},
+	{id: 'Donkey Kong', name: 'Donkey Kong', image: '100px-Donkey_Kong_SSBU.png'},
+	{id: 'Diddy Kong', name: 'Diddy Kong', image: '96px-Diddy_Kong_SSBU.png'},
+	{id: 'Link', name: 'Link', image: '100px-Link_SSBU.png'},
+	{id: 'Zelda', name: 'Zelda', image: '100px-Zelda_SSBU.png'},
+	{id: 'Sheik', name: 'Sheik', image: '100px-Sheik_SSBU.png'},
+	{id: 'Young Link', name: 'Young Link', image: '100px-Young_Link_SSBU.png'},
+	{id: 'Ganondorf', name: 'Ganondorf', image: '99px-Ganondorf_SSBU.png'},
+	{id: 'Toon Link', name: 'Toon Link', image: '95px-Toon_Link_SSBU.png'},
+	{id: 'Samus', name: 'Samus', image: '100px-Samus_SSBU.png'},
+	{id: 'Zero Suit Samus', name: 'Zero Suit Samus', image: '100px-Zero_Suit_Samus_SSBU.png'},
+	{id: 'Kirby', name: 'Kirby', image: '100px-Kirby_SSBU.png'},
+	{id: 'Meta Knight', name: 'Meta Knight', image: '100px-Meta_Knight_SSBU.png'},
+	{id: 'King Dedede', name: 'King Dedede', image: '100px-King_Dedede_SSBU.png'},
+	{id: 'Fox', name: 'Fox', image: '100px-Fox_SSBU.png'},
+	{id: 'Falco', name: 'Falco', image: '100px-Falco_SSBU.png'},
+	{id: 'Wolf', name: 'Wolf', image: '100px-Wolf_SSBU.png'},
+	{id: 'Pikachu', name: 'Pikachu', image: '100px-Pikachu_SSBU.png'},
+	{id: 'Jigglypuff', name: 'Jigglypuff', image: '100px-Jigglypuff_SSBU.png'},
+	{id: 'Pichu', name: 'Pichu', image: '100px-Pichu_SSBU.png'},
+	{id: 'Mewtwo', name: 'Mewtwo', image: '99px-Mewtwo_SSBU.png'},
+    {id: 'Pokemon Trainer', name: 'Pokemon Trainer', image: '1000px-Pokémon_Trainer_Palette_(SSBU).png'},
+	{id: 'Lucario', name: 'Lucario', image: '100px-Lucario_SSBU.png'},
+	{id: 'Greninja', name: 'Greninja', image: '100px-Greninja_SSBU.png'},
+	{id: 'Captain Falcon', name: 'Captain Falcon', image: '100px-Captain_Falcon_SSBU.png'},
+	{id: 'Ness', name: 'Ness', image: '100px-Ness_SSBU.png'},
+	{id: 'Lucas', name: 'Lucas', image: '100px-Lucas_SSBU.png'},
+	{id: 'Ice Climbers', name: 'Ice Climbers', image: '100px-Ice_Climbers_SSBU.png'},
+	{id: 'Marth', name: 'Marth', image: '100px-Marth_SSBU.png'},
+	{id: 'Roy', name: 'Roy', image: '100px-Roy_SSBU.png'},
+	{id: 'Ike', name: 'Ike', image: '100px-Ike_SSBU.png'},
+	{id: 'Lucina', name: 'Lucina', image: '100px-Lucina_SSBU.png'},
+	{id: 'Robin', name: 'Robin', image: '100px-Robin_SSBU.png'},
+	{id: 'Corrin', name: 'Corrin', image: '100px-Corrin_SSBU.png'},
+	{id: 'Mr. Game & Watch', name: 'Mr. Game & Watch', image: '100px-Mr._Game_&_Watch_SSBU.png'},
+	{id: 'Pit', name: 'Pit', image: '100px-Pit_SSBU.png'},
+	{id: 'Palutena', name: 'Palutena', image: '95px-Palutena_SSBU.png'},
+	{id: 'Dark Pit', name: 'Dark Pit', image: '95px-Dark_Pit_SSBU.png'},
+	{id: 'Wario', name: 'Wario', image: '100px-Wario_SSBU.png'},
+	{id: 'Olimar', name: 'Olimar', image: '100px-Olimar_SSBU.png'},
+	{id: 'R.O.B.', name: 'R.O.B.', image: '100px-R.O.B._SSBU.png'},
+	{id: 'Villager', name: 'Villager', image: '100px-Villager_SSBU.png'},
+	{id: 'Wii Fit Trainer', name: 'Wii Fit Trainer', image: '100px-Wii_Fit_Trainer_SSBU.png'},
+	{id: 'Little Mac', name: 'Little Mac', image: '100px-Little_Mac_SSBU.png'},
+	{id: 'Shulk', name: 'Shulk', image: '100px-Shulk_SSBU.png'},
+	{id: 'Duck Hunt', name: 'Duck Hunt', image: '100px-Duck_Hunt_SSBU.png'},
+	{id: 'Snake', name: 'Snake', image: '82px-Snake_SSBU.png'},
+	{id: 'Sonic', name: 'Sonic', image: '100px-Sonic_SSBU.png'},
+	{id: 'Mega Man', name: 'Mega Man', image: '100px-Mega_Man_SSBU.png'},
+	{id: 'Pac-Man', name: 'Pac-Man', image: '100px-Pac-Man_SSBU.png'},
+	{id: 'Ryu', name: 'Ryu', image: '100px-Ryu_SSBU.png'},
+	{id: 'Cloud', name: 'Cloud', image: '100px-Cloud_SSBU.png'},
+	{id: 'Bayonetta', name: 'Bayonetta', image: '100px-Bayonetta_SSBU.png'},
+	{id: 'Mii', name: 'Mii', image: '250px-Mii_Fighter_SSBU.png'},
+
+    
+    //Newcomers
+    //{id: '', name: '', image: '.png'},
+    {id: 'Daisy', name: 'Daisy', image: '100px-Daisy_SSBU.png'},
+    {id: 'Piranha Plant', name: 'Piranha Plant', image: '100px-Piranha_Plant_SSBU.png'},
+    {id: 'King K. Rool', name: 'King K. Rool', image: '100px-King_K._Rool_SSBU.png'},
+    {id: 'Ridley', name: 'Ridley', image: '100px-Ridley_SSBU.png'},
+	{id: 'Dark Samus', name: 'Dark Samus', image: '100px-Dark_Samus_SSBU.png'},
+	{id: 'Incineroar', name: 'Incineroar', image: '100px-Incineroar_SSBU.png'},
+	{id: 'Chrom', name: 'Chrom', image: '85px-Chrom_SSBU.png'},
+	{id: 'Byleth', name: 'Byleth', image: '100px-Byleth_SSBU.png'},
+	{id: 'Isabelle', name: 'Isabelle', image: '100px-Isabelle_SSBU.png'},
+	{id: 'Inkling', name: 'Inkling', image: '100px-Inkling_SSBU.png'},
+	{id: 'Min Min', name: 'Min Min', image: '100px-Min_Min_SSBU.png'},
+	{id: 'Ken', name: 'Ken', image: '100px-Ken_SSBU.png'},
+	{id: 'Simon', name: 'Simon', image: '100px-Simon_SSBU.png'},
+	{id: 'Richter', name: 'Richter', image: '100px-Richter_SSBU.png'},
+	{id: 'Joker', name: 'Joker', image: '100px-Joker_SSBU.png'},
+	{id: 'Hero', name: 'Hero', image: '100px-Hero_SSBU.png'},
+	{id: 'Banjo & Kazooie', name: 'Banjo & Kazooie', image: '100px-Banjo_&_Kazooie_SSBU.png'},
+	{id: 'Terry', name: 'Terry', image: '100px-Terry_SSBU.png'},
+    {id: 'Steve', name: 'Steve', image: '73px-Steve_SSBU.png'},
+    {id: 'Sephiroth', name: 'Sephiroth', image: '100px-Sephiroth_SSBU.png'},
+    {id: 'Pyra / Mythra', name: 'Pyra / Mythra', image: '140px-Pyra_&_Mythra_SSBU.png'},
+    {id: 'Kazuya', name: 'Kazuya', image: '100px-Kazuya_SSBU.png'},
+    {id: 'Sora', name: 'Sora', image: '77px-Sora_SSBU.png'},
+    
+];
+
+var myPicker = new picker.Picker({
+    items: items,
+    localStorageKey: 'picker-state'
+});
+
+var pickerUI = new PickerUI(myPicker, {
+    elements: {
+        pick: "#pick",
+        pass: "#pass",
+        undo: "#undo",
+        redo: "#redo",
+        reset: ".reset",
+        evaluating: "#evaluating",
+        favorites: "#favorites"
+    }
+});
+
+pickerUI.initialize();
+
+/* Sortable favorites - you can safely remove this, and the Sortable.min.js script, if you don't want to be able to sort your favorite list. */
+var sortable = new Sortable(pickerUI.elem.favorites.get(0), {
+    draggable: '.item',
+    animation: 100,
+    onStart: function() {
+        pickerUI.elem.favorites.addClass("sorting");
+    },
+    onEnd: function() {
+        pickerUI.elem.favorites.removeClass("sorting");
+    },
+    onUpdate: function() {
+        myPicker.setFavorites(pickerUI.elem.favorites.children().map(function() {
+            return pickerUI.getItem(this);
+        }).get());
+        pickerUI.update(true);
+    }
+});
+/* End sortable favorites */
+</script>
+</body>
+</html>
